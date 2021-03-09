@@ -3,6 +3,7 @@ import contextlib
 import io
 import json
 import os.path as osp
+import gzip
 
 import PIL.Image
 
@@ -85,8 +86,13 @@ class LabelFile(object):
             "flags",
         ]
         try:
-            with open(filename, "r") as f:
-                data = json.load(f)
+            if filename.endswith(".gz"):
+                with gzip.open(filename, "rt", encoding="ascii") as f:
+                    data = json.load(f)
+            else:
+                with open(filename, "r") as f:
+                    data = json.load(f)
+
             version = data.get("version")
             if version is None:
                 logger.warn(
@@ -197,8 +203,12 @@ class LabelFile(object):
             assert key not in data
             data[key] = value
         try:
-            with open(filename, "w") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+            if filename.endswith(".gz"):
+                with gzip.open(filename, "wt", encoding="ascii") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+            else:
+                with open(filename, "w") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
             self.filename = filename
         except Exception as e:
             raise LabelFileError(e)
